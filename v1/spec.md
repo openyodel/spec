@@ -235,6 +235,8 @@ data: {"yodel":{"tts_url":"https://example.com/audio/abc123.opus","session_id":"
 
 Additional fields MAY be added in future protocol versions. Clients MUST ignore unknown fields in the `yodel` event.
 
+If the client requested TTS (`tts.requested: true`) but the backend does not generate audio, the backend MAY either omit the `tts_url` field from the yodel event, omit the yodel event entirely, or return `tts_url` as `null`. Clients MUST treat all three cases identically: fall back to text-only mode without error.
+
 #### 7.1.3 Stream Termination
 
 The stream ends with the standard SSE termination signal:
