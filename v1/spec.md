@@ -363,7 +363,7 @@ Yodel headers (`X-Yodel-Device`, `X-Yodel-Session`, `X-Yodel-Agent`) contain ide
 
 ### 10.4 Device Identity
 
-Device identifiers (`X-Yodel-Device`) are client-generated UUID v4 values. They persist across sessions and identify a physical device. Clients SHOULD store device IDs securely (e.g., iOS Keychain, Android Keystore, browser `localStorage`).
+Device identifiers (`X-Yodel-Device`) are client-generated UUID v4 values. They persist across sessions and identify a physical device. Clients SHOULD store device IDs securely using platform-appropriate mechanisms (e.g., iOS Keychain, Android Keystore, Web Crypto API with IndexedDB, or equivalent secure client-side storage).
 
 ---
 
