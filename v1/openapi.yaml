@@ -223,7 +223,7 @@ components:
         stream:
           type: boolean
           description: Must be `true`. Yodel v1 is streaming-only.
-          enum: [true]
+          const: true
         messages:
           type: array
           description: Conversation messages in OpenAI format.
