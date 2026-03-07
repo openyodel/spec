@@ -1,0 +1,415 @@
+openapi: 3.1.0
+info:
+  title: Yodel Protocol
+  description: |
+    Open communication protocol for universal voice/text interfaces to AI backends.
+    Yodel extends the OpenAI-compatible `/v1/chat/completions` endpoint with optional
+    headers and metadata for TTS control, device context, and session management.
+  version: "1.0-draft"
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: Open Yodel
+    url: https://github.com/openyodel
+
+servers:
+  - url: https://{host}
+    description: Any OpenAI-compatible backend
+    variables:
+      host:
+        default: api.example.com
+
+paths:
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      summary: Create a streaming chat completion (Yodel-extended)
+      description: |
+        Standard OpenAI-compatible chat completion endpoint extended with optional
+        Yodel headers and an optional `yodel` block in the request body.
+
+        A backend that does not understand Yodel ignores the extensions —
+        the request remains a valid OpenAI-compatible request.
+      parameters:
+        - $ref: "#/components/parameters/X-Yodel-Version"
+        - $ref: "#/components/parameters/X-Yodel-Session"
+        - $ref: "#/components/parameters/X-Yodel-Device"
+        - $ref: "#/components/parameters/X-Yodel-Agent"
+        - $ref: "#/components/parameters/X-Yodel-Mode"
+        - $ref: "#/components/parameters/X-Yodel-Input"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/YodelChatCompletionRequest"
+            examples:
+              minimal:
+                summary: Minimal request (no Yodel extensions)
+                value:
+                  model: llama3
+                  stream: true
+                  messages:
+                    - role: user
+                      content: "Hello, how are you?"
+              full:
+                summary: Full request with Yodel extensions
+                value:
+                  model: llama3
+                  stream: true
+                  messages:
+                    - role: system
+                      content: "You are a friendly assistant."
+                    - role: user
+                      content: "What's the weather like?"
+                  yodel:
+                    input_lang: en
+                    tts:
+                      requested: true
+                      voice: alloy
+                      provider: elevenlabs
+                      format: opus
+                    device:
+                      type: ios
+                      capabilities:
+                        - audio_out
+                        - audio_in
+                        - display
+                        - haptic
+      responses:
+        "200":
+          description: SSE stream of chat completion chunks, optionally followed by a Yodel event.
+          content:
+            text/event-stream:
+              schema:
+                description: |
+                  The response is an SSE stream. Each `data:` line contains one of:
+                  - A standard OpenAI chat completion chunk
+                  - A Yodel event with TTS URL and session metadata
+                  - The literal string `[DONE]` to signal stream end
+                oneOf:
+                  - $ref: "#/components/schemas/ChatCompletionChunk"
+                  - $ref: "#/components/schemas/YodelResponseEvent"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized — invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden — valid key but insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found — endpoint or model not available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Backend API key (e.g., OpenAI key, Ollama token, custom key)
+
+  parameters:
+    X-Yodel-Version:
+      name: X-Yodel-Version
+      in: header
+      required: false
+      description: Yodel protocol version. Currently `1`.
+      schema:
+        type: integer
+        enum: [1]
+        example: 1
+
+    X-Yodel-Session:
+      name: X-Yodel-Session
+      in: header
+      required: false
+      description: Session identifier (UUID v4) for session continuity.
+      schema:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+
+    X-Yodel-Device:
+      name: X-Yodel-Device
+      in: header
+      required: false
+      description: Device identifier (UUID v4). Persists across sessions.
+      schema:
+        type: string
+        format: uuid
+        example: d4f5a6b7-8c9d-4e0f-a1b2-c3d4e5f6a7b8
+
+    X-Yodel-Agent:
+      name: X-Yodel-Agent
+      in: header
+      required: false
+      description: Agent slug identifying the active agent configuration.
+      schema:
+        type: string
+        example: cooking
+
+    X-Yodel-Mode:
+      name: X-Yodel-Mode
+      in: header
+      required: false
+      description: "Session mode. Default: ephemeral."
+      schema:
+        type: string
+        enum:
+          - ephemeral
+          - persistent
+        default: ephemeral
+
+    X-Yodel-Input:
+      name: X-Yodel-Input
+      in: header
+      required: false
+      description: Input source — how the user message was created.
+      schema:
+        type: string
+        enum:
+          - voice
+          - text
+
+  schemas:
+    # ─── Request ───
+
+    YodelChatCompletionRequest:
+      type: object
+      required:
+        - model
+        - stream
+        - messages
+      properties:
+        model:
+          type: string
+          description: Model identifier (e.g., `llama3`, `claude-sonnet-4-20250514`, `gpt-4o`).
+          example: llama3
+        stream:
+          type: boolean
+          description: Must be `true`. Yodel v1 is streaming-only.
+          enum: [true]
+        messages:
+          type: array
+          description: Conversation messages in OpenAI format.
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+          minItems: 1
+        temperature:
+          type: number
+          description: Sampling temperature (OpenAI-compatible).
+          minimum: 0
+          maximum: 2
+        max_tokens:
+          type: integer
+          description: Maximum tokens to generate (OpenAI-compatible).
+          minimum: 1
+        top_p:
+          type: number
+          description: Nucleus sampling (OpenAI-compatible).
+          minimum: 0
+          maximum: 1
+        yodel:
+          $ref: "#/components/schemas/YodelRequestBlock"
+
+    ChatMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum:
+            - system
+            - user
+            - assistant
+          description: The role of the message author.
+        content:
+          type: string
+          description: The content of the message.
+
+    YodelRequestBlock:
+      type: object
+      description: |
+        Optional Yodel extension block. Backends that don't understand Yodel
+        ignore this block — the request remains a valid OpenAI-compatible request.
+      properties:
+        input_lang:
+          type: string
+          description: "BCP 47 language tag of the user input (e.g., `de`, `en-US`, `de-AT`)."
+          example: de
+        tts:
+          $ref: "#/components/schemas/YodelTtsRequest"
+        device:
+          $ref: "#/components/schemas/YodelDevice"
+        context:
+          type: object
+          description: Reserved for future use. Send empty object `{}` or omit.
+
+    YodelTtsRequest:
+      type: object
+      description: TTS configuration requested by the client.
+      properties:
+        requested:
+          type: boolean
+          description: Whether the client requests TTS audio for the response.
+          default: false
+        voice:
+          type: string
+          description: "Preferred voice identifier (e.g., `alloy`, `nova`)."
+          example: alloy
+        provider:
+          type: string
+          description: "Preferred TTS provider (e.g., `elevenlabs`, `edge`, `local`). Advisory."
+          example: elevenlabs
+        format:
+          type: string
+          description: Preferred audio format.
+          enum:
+            - opus
+            - mp3
+            - wav
+            - aac
+          default: opus
+
+    YodelDevice:
+      type: object
+      description: Device metadata.
+      properties:
+        type:
+          type: string
+          description: Device type.
+          enum:
+            - ios
+            - android
+            - web
+            - car
+            - speaker
+            - terminal
+            - embedded
+          example: ios
+        capabilities:
+          type: array
+          description: List of device capabilities.
+          items:
+            type: string
+            enum:
+              - audio_out
+              - audio_in
+              - display
+              - haptic
+              - camera
+          example:
+            - audio_out
+            - audio_in
+            - display
+
+    # ─── Response ───
+
+    ChatCompletionChunk:
+      type: object
+      description: Standard OpenAI streaming chunk.
+      properties:
+        id:
+          type: string
+          example: chatcmpl-xyz
+        object:
+          type: string
+          enum: [chat.completion.chunk]
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              delta:
+                type: object
+                properties:
+                  role:
+                    type: string
+                  content:
+                    type: string
+              finish_reason:
+                type:
+                  - "string"
+                  - "null"
+                enum: [null, stop, length]
+
+    YodelResponseEvent:
+      type: object
+      description: Yodel-specific response event, sent before `[DONE]`.
+      properties:
+        yodel:
+          type: object
+          required: []
+          properties:
+            tts_url:
+              type: string
+              format: uri
+              description: URL to the generated TTS audio file.
+              example: https://tts.example.com/audio/chatcmpl-xyz.opus
+            session_id:
+              type: string
+              format: uuid
+              description: Server-assigned session identifier.
+              example: 550e8400-e29b-41d4-a716-446655440000
+
+    ErrorResponse:
+      type: object
+      description: Error response in OpenAI format.
+      properties:
+        error:
+          type: object
+          required:
+            - message
+            - type
+          properties:
+            message:
+              type: string
+              description: Human-readable error message.
+              example: Invalid API key
+            type:
+              type: string
+              description: Error type.
+              example: authentication_error
+            code:
+              type: string
+              description: Machine-readable error code.
+              example: invalid_api_key
