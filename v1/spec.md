@@ -85,6 +85,8 @@ POST /v1/chat/completions
 
 This is the standard OpenAI-compatible endpoint. Yodel does not introduce new endpoints in v1.
 
+**Header vs. body scope:** Yodel headers (`X-Yodel-*`) are fully backend-agnostic — any HTTP server can accept and forward them regardless of its API shape. The request body, however, is backend-specific. `/v1/chat/completions` with the OpenAI-compatible message format is the recommended baseline for maximum interoperability, but a backend MAY accept Yodel headers while using a different body format (e.g., Anthropic's `parts` format or a custom schema). The OpenAI compatibility guarantee (§11.1) applies when using the OpenAI-compatible body format.
+
 ### 6.2 Yodel Headers
 
 All Yodel headers are **optional**. A request without any Yodel headers is a standard OpenAI-compatible request.
@@ -226,7 +228,7 @@ data: {"yodel":{"tts_url":"https://example.com/audio/abc123.opus","session_id":"
 | Field | Type | Description |
 |-------|------|-------------|
 | `yodel.tts_url` | String (URL) | URL to the generated TTS audio file. Present only if TTS was requested and generated. The client SHOULD fetch and play this audio. |
-| `yodel.session_id` | String (UUID) | Server-assigned session identifier. The client SHOULD include this as `X-Yodel-Session` in subsequent requests to maintain session continuity. |
+| `yodel.session_id` | String (UUID) | Session identifier for this conversation. A Yodel-aware backend that manages sessions server-side SHOULD return the active session identifier after the first message in a session. The client SHOULD use this value as `X-Yodel-Session` in all subsequent requests to maintain session continuity. If the client already sent an `X-Yodel-Session` header, the backend SHOULD echo the same value back to confirm the session association. |
 
 Additional fields MAY be added in future protocol versions. Clients MUST ignore unknown fields in the `yodel` event.
 
@@ -295,8 +297,8 @@ Like a chat. The client manages message history.
 
 | Event | Behavior |
 |-------|----------|
-| Client sends request without `X-Yodel-Session` | Backend MAY create a new session and return `session_id` in the yodel event. |
-| Client sends request with `X-Yodel-Session` | Backend SHOULD associate the request with the existing session. |
+| Client sends request without `X-Yodel-Session` | Backend MAY create a new session and return `session_id` in the yodel event. The client SHOULD use this value as `X-Yodel-Session` in all subsequent requests. |
+| Client sends request with `X-Yodel-Session` | Backend SHOULD associate the request with the existing session and SHOULD echo the session ID back in the `yodel.session_id` response field to confirm the association. |
 | Session expiration | Backend-defined. Sessions MAY expire after inactivity. Clients MUST handle missing sessions gracefully by starting a new conversation. |
 
 ---
@@ -380,6 +382,7 @@ Every valid Yodel v1 request is also a valid OpenAI-compatible chat completion r
 | Backend ignores `yodel` body block | No TTS URL, no session ID in response. Client falls back to text-only mode. |
 | Backend does not send `yodel` response event | Client treats response as standard OpenAI stream. No TTS playback. |
 | Client omits all Yodel extensions | Request is a plain OpenAI-compatible request. Fully functional. |
+| Backend does not support SSE streaming | **Not Yodel v1 compatible.** Yodel v1 is streaming-only (§5.2). A backend MUST support SSE streaming to be Yodel v1 compatible. Non-streaming backends MAY still accept Yodel headers, but this does not constitute Yodel compliance. |
 
 ### 11.3 Version Negotiation
 
