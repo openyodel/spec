@@ -21,6 +21,54 @@ servers:
         default: api.example.com
 
 paths:
+  /.well-known/yodel.json:
+    get:
+      operationId: getYodelDiscovery
+      summary: Service discovery endpoint
+      description: |
+        Optional well-known endpoint for machine-readable Yodel service discovery.
+        Returns public metadata about the host: protocol version, available endpoints,
+        capabilities, and optionally published agents.
+
+        No authentication required. This endpoint returns only public metadata.
+        A multi-tenant gateway MUST NOT list account-specific agents here.
+      security: []
+      responses:
+        "200":
+          description: Discovery metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YodelDiscovery"
+              examples:
+                directBackend:
+                  summary: Direct backend (e.g., Ollama)
+                  value:
+                    yodel_version: 1
+                    endpoints:
+                      chat_completions: /v1/chat/completions
+                    capabilities:
+                      - streaming
+                    agents:
+                      - slug: llama3
+                        name: Llama 3
+                        model: llama3
+                gateway:
+                  summary: Gateway (e.g., WIRE)
+                  value:
+                    yodel_version: 1
+                    gateway: wire
+                    endpoints:
+                      chat_completions: /v1/yodel/{agent_slug}
+                      config: /v1/devices/{device_id}/config
+                      health: /v1/health
+                    capabilities:
+                      - streaming
+                      - tts
+                      - device_management
+                      - agent_binding
+                    agents: []
+
   /v1/chat/completions:
     post:
       operationId: createChatCompletion
@@ -207,6 +255,74 @@ components:
           - text
 
   schemas:
+    # ─── Discovery ───
+
+    YodelDiscovery:
+      type: object
+      required:
+        - yodel_version
+        - endpoints
+      description: |
+        Service discovery response. Returned by `/.well-known/yodel.json`.
+        Convention: v1 is always supported — a v1 client can connect to a v2 host.
+      properties:
+        yodel_version:
+          type: integer
+          description: Highest supported protocol version.
+          example: 1
+        endpoints:
+          type: object
+          description: Available endpoints relative to the base URL.
+          properties:
+            chat_completions:
+              type: string
+              description: Chat completions endpoint path.
+              example: /v1/chat/completions
+          additionalProperties:
+            type: string
+        capabilities:
+          type: array
+          description: Backend capabilities.
+          items:
+            type: string
+          example:
+            - streaming
+            - tts
+        gateway:
+          type: string
+          description: |
+            Gateway name (e.g., `wire`). If present, the host is a gateway
+            with device management, agent bindings, and proxy capabilities.
+            If absent, the host is a direct backend.
+          example: wire
+        agents:
+          type: array
+          description: |
+            Explicitly published agents (opt-in). Default: empty array.
+            A multi-tenant gateway MUST NOT list account-specific agents here.
+          items:
+            $ref: "#/components/schemas/YodelDiscoveryAgent"
+          default: []
+
+    YodelDiscoveryAgent:
+      type: object
+      description: Publicly discoverable agent metadata. No secrets or API keys.
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+          description: Agent identifier.
+          example: llama3
+        name:
+          type: string
+          description: Human-readable agent name.
+          example: Llama 3
+        model:
+          type: string
+          description: Model identifier.
+          example: llama3
+
     # ─── Request ───
 
     YodelChatCompletionRequest:

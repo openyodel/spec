@@ -416,7 +416,126 @@ Clients and backends MUST ignore unknown headers, unknown fields in JSON bodies,
 
 ---
 
-## 13. Full Example
+## 13. Service Discovery
+
+**Yodel works without discovery.** A client that knows an endpoint URL (IP address, hostname, any URL) can connect directly — no gateway, no configuration file, no network discovery needed. This is the simplest and most fundamental connection method.
+
+Discovery is an **optional convenience layer** that automates finding Yodel endpoints.
+
+### 13.1 Connection Methods
+
+**Direct URL (baseline):** A client receives an endpoint URL (e.g., `http://192.168.1.42:11434`, `http://macbook.local:8080`, `https://api.openai.com`) and connects directly. No further infrastructure needed. This MUST always be supported and always takes precedence.
+
+**Discovery (optional):** When the client does not know the URL, it SHOULD use the following order:
+
+1. **Configuration file (Known Hosts)** — Explicit endpoint list, stored locally on the client.
+2. **Gateway** — A registered gateway (e.g., WIRE) provides configured agents and endpoints via config pull.
+3. **Network discovery** — Automatic search in trusted networks (Tailscale, VPN, local WLAN).
+
+Each discovery level is optional. A client MAY implement none, one, or several levels.
+
+### 13.2 Well-Known Endpoint
+
+```
+GET /.well-known/yodel.json
+```
+
+A Yodel-aware backend or gateway MAY provide a well-known endpoint for machine-readable discovery.
+
+**Response (`200 OK`):**
+
+```json
+{
+  "yodel_version": 1,
+  "endpoints": {
+    "chat_completions": "/v1/chat/completions"
+  },
+  "capabilities": ["streaming", "tts"],
+  "agents": []
+}
+```
+
+**Fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `yodel_version` | Integer | Yes | Highest supported protocol version. **Convention: v1 is always supported.** A v1 client can connect to a v2 host. |
+| `endpoints` | Object | Yes | Available endpoints relative to the base URL. |
+| `capabilities` | Array\<String\> | No | Backend capabilities (e.g., `streaming`, `tts`, `device_management`). |
+| `gateway` | String | No | Gateway name (e.g., `"wire"`). If present, the host is a gateway (with device management, agent bindings, proxy). If absent, the host is a direct backend. |
+| `agents` | Array\<Object\> | No | Explicitly published agents (opt-in). Default: `[]`. |
+
+**Agent visibility and security:** The `agents` array is a sensitive field:
+
+- A **direct backend** (e.g., local Ollama) MAY list its available models as agents — in a local/trusted context, this is unproblematic.
+- A **multi-tenant gateway** (e.g., WIRE with multiple accounts) MUST NOT list account-specific agents in the public well-known endpoint. Agents are account-scoped and require authentication.
+- Default: Empty array `[]`. Only agents explicitly published for discovery are listed (opt-in, e.g., via `--discoverable` flag or configuration).
+- If a gateway wants to provide authenticated agent lists, it SHOULD use a config pull endpoint (e.g., `GET /v1/devices/{id}/config`), not the well-known endpoint.
+
+**Security:**
+
+- MUST be served over HTTPS (exception: localhost and trusted networks).
+- MUST return `application/json` Content-Type.
+- MUST NOT expose secrets, API keys, or internal configuration.
+- The well-known endpoint itself requires NO authentication — it returns only public metadata.
+
+### 13.3 Network Discovery
+
+Yodel backends on a local network MAY register as `_yodel._tcp` services via mDNS/DNS-SD.
+
+**Service TXT records:**
+
+| Record | Required | Description |
+|--------|----------|-------------|
+| `yodel_version=1` | Yes | Supported protocol version. |
+| `path=/.well-known/yodel.json` | No | Path to the well-known endpoint. Default: `/.well-known/yodel.json`. |
+
+**Trust context:** Discovery is not trust. Any device on the network can announce a `_yodel._tcp` service. Network discovery SHOULD therefore only be used without further verification in explicitly trusted environments:
+
+- Tailscale / WireGuard / other VPN solutions (authenticated peers)
+- Local home networks (under own control)
+- Dedicated IoT networks
+
+Clients MUST disable network discovery in public, open, or unknown networks, or require explicit user confirmation before connecting to discovered endpoints. The decision about which networks are trusted lies with the client or operating system.
+
+**Note:** Even in trusted networks, discovery does not replace authentication. A discovered endpoint is a connection offer — whether the client trusts it is a separate decision.
+
+### 13.4 Configuration File (Known Hosts)
+
+Clients MAY maintain a local configuration file listing known Yodel endpoints. Format and storage location are client-specific.
+
+**Recommended format (informative):**
+
+```json
+{
+  "hosts": [
+    {
+      "name": "Local Ollama",
+      "url": "http://localhost:11434"
+    },
+    {
+      "name": "Home Server",
+      "url": "http://192.168.1.42:8080"
+    },
+    {
+      "name": "OpenAI",
+      "url": "https://api.openai.com"
+    },
+    {
+      "name": "WIRE Gateway",
+      "url": "https://api.wire.example.com"
+    }
+  ]
+}
+```
+
+Known hosts intentionally do NOT contain `yodel_version` — the protocol version is negotiated at runtime via the well-known endpoint or the first request. The client stores only the URL. Whether a host is a gateway or a direct backend is determined from the well-known response (`gateway` field) or from the behavior of the first request.
+
+Configured hosts ALWAYS take precedence over discovery results.
+
+---
+
+## 14. Full Example
 
 ### Request
 
