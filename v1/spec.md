@@ -151,7 +151,6 @@ The `yodel` block is an **optional** top-level field in the request body. A back
       "type": "ios",
       "capabilities": ["audio_out", "haptic"]
     },
-    "context": {}
   }
 }
 ```
@@ -193,10 +192,6 @@ Device metadata. Allows Yodel-aware backends to adapt responses based on client 
 | `camera` | Device has a camera. |
 
 Additional capabilities MAY be defined by implementations. Unknown capabilities MUST be ignored by backends.
-
-#### 6.4.4 `yodel.context`
-
-Reserved for future use. Clients MAY send an empty object `{}`. Backends MUST ignore this field in v1.
 
 ---
 
@@ -633,7 +628,6 @@ yodel
 ├── device
 │   ├── type         String (ios | android | web | car | speaker | terminal | embedded)
 │   └── capabilities Array<String>
-└── context          Object (reserved)
 ```
 
 ## Appendix C: Yodel Response Event Schema
