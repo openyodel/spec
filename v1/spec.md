@@ -62,7 +62,15 @@ The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT", and "MAY" in this docu
 
 ### 5.1 Protocol
 
-Yodel v1 uses HTTPS as the transport protocol. Clients MUST use TLS (HTTPS) for all communication.
+Yodel v1 uses HTTPS as the transport protocol. Clients MUST use TLS (HTTPS) for all communication over public or untrusted networks.
+
+**Exception:** Plain HTTP (without TLS) MAY be used when the transport is already secure:
+
+- **Localhost:** Communication within the same machine (e.g., `http://localhost:11434`).
+- **Encrypted network overlays:** Networks that provide encryption at the network layer (e.g., Tailscale, WireGuard). The peer is already authenticated and the channel is encrypted.
+- **Trusted local networks:** The client MAY allow plain HTTP on networks it considers trusted (e.g., home networks under the user's control). The decision about which networks are trusted is a client responsibility and SHOULD require explicit user configuration or confirmation.
+
+In all other cases, TLS is mandatory. When in doubt, use HTTPS.
 
 ### 5.2 Streaming
 
@@ -152,7 +160,7 @@ The `yodel` block is an **optional** top-level field in the request body. A back
     "device": {
       "type": "ios",
       "capabilities": ["audio_out", "haptic"]
-    },
+    }
   }
 }
 ```
@@ -348,7 +356,7 @@ Clients MUST handle errors both as HTTP responses (before streaming starts) and 
 
 ### 10.1 Transport Security
 
-All Yodel communication MUST use TLS 1.2 or higher. Clients MUST NOT send requests over plain HTTP.
+All Yodel communication MUST use TLS 1.2 or higher over public or untrusted networks. Clients MUST NOT send requests over plain HTTP unless the conditions in §5.1 apply.
 
 ### 10.2 Authentication
 

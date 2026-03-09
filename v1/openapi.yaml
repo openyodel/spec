@@ -439,15 +439,12 @@ components:
           example: ios
         capabilities:
           type: array
-          description: List of device capabilities.
+          description: |
+            List of device capabilities. Defined values: audio_out, audio_in,
+            display, haptic, camera. Implementations MAY define additional
+            capabilities. Unknown capabilities MUST be ignored by backends.
           items:
             type: string
-            enum:
-              - audio_out
-              - audio_in
-              - display
-              - haptic
-              - camera
           example:
             - audio_out
             - audio_in
@@ -501,7 +498,12 @@ components:
             session_id:
               type: string
               format: uuid
-              description: Server-assigned session identifier.
+              description: |
+                Session identifier for this conversation. A Yodel-aware backend
+                that manages sessions server-side SHOULD return the active session
+                identifier after the first message. If the client already sent an
+                X-Yodel-Session header, the backend SHOULD echo the same value back
+                to confirm the session association.
               example: 550e8400-e29b-41d4-a716-446655440000
 
     ErrorResponse:
