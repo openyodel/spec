@@ -19,7 +19,11 @@ Giving the protocol its own name today makes the spec referenceable and reserves
 
 This specification covers **Yodel as Conversation** — the ongoing communication protocol between client and backend. **Yodel as Call** (the musical audio handshake for device-to-gateway pairing) is outside the scope of this protocol spec and defined separately.
 
-### 1.2 Conventions
+### 1.2 Decision Records
+
+Significant design decisions are documented as Architecture Decision Records (ADRs) in the [`decisions/`](../decisions/) directory (e.g., `ADR-001-openai-compatible-baseline.md`).
+
+### 1.3 Conventions
 
 The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT", and "MAY" in this document are to be interpreted as described in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 
@@ -381,6 +385,8 @@ Every valid Yodel v1 request is also a valid OpenAI-compatible chat completion r
 - Using the standard `/v1/chat/completions` endpoint.
 - Placing all Yodel extensions in custom `X-Yodel-*` headers (which non-Yodel backends ignore).
 - Placing the `yodel` extension block as a top-level field in the body (which non-Yodel backends ignore as an unknown field).
+
+The rationale behind this design decision is documented in [ADR-001](../decisions/ADR-001-openai-compatible-baseline.md).
 
 ### 11.2 Graceful Degradation
 

@@ -44,6 +44,8 @@ The response is a standard SSE stream. Yodel-aware backends may include a `yodel
 v1/
   spec.md          Human-readable protocol specification
   openapi.yaml     OpenAPI 3.1 machine-readable spec
+decisions/
+  ADR-NNN-*.md     Architecture Decision Records (ADRs)
 ```
 
 ## Related
