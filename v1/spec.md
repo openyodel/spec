@@ -192,10 +192,12 @@ Device metadata. Allows Yodel-aware backends to adapt responses based on client 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `device.type` | String | No | Device type: `ios`, `android`, `web`, `car`, `speaker`, `terminal`, `embedded`. |
-| `device.capabilities` | Array\<String\> | No | List of device capabilities. |
+| `device.type` | String | No | Device type: `ios`, `android`, `web`, `car`, `speaker`, `terminal`, `embedded`, `agent_platform`. |
+| `device.capabilities` | Array\<String\> | No | List of device capabilities (hardware and software). |
 
 **Defined capabilities:**
+
+Capabilities describe what the client can do — regardless of whether the capability is hardware or software. A backend uses this list to adapt its responses (e.g., skip TTS when `audio_out` is absent, offer workflow triggers when `workflows` is present).
 
 | Capability | Description |
 |------------|-------------|
@@ -206,6 +208,8 @@ Device metadata. Allows Yodel-aware backends to adapt responses based on client 
 | `camera` | Device has a camera. |
 
 Additional capabilities MAY be defined by implementations. Unknown capabilities MUST be ignored by backends.
+
+**Namespacing convention:** Standard capabilities that apply across platforms use plain identifiers (e.g., `skills`, `cron`, `workflows`). Platform-specific capabilities SHOULD use a namespace prefix to avoid collisions (e.g., `openclaw:exec_approvals`, `ha:scenes`).
 
 ---
 
@@ -643,7 +647,7 @@ yodel
 │   ├── provider     String
 │   └── format       String (opus | mp3 | wav | aac)
 ├── device
-│   ├── type         String (ios | android | web | car | speaker | terminal | embedded)
+│   ├── type         String (ios | android | web | car | speaker | terminal | embedded | agent_platform)
 │   └── capabilities Array<String>
 ```
 
