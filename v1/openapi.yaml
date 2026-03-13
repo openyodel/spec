@@ -436,13 +436,16 @@ components:
             - speaker
             - terminal
             - embedded
+            - agent_platform
           example: ios
         capabilities:
           type: array
           description: |
-            List of device capabilities. Defined values: audio_out, audio_in,
-            display, haptic, camera. Implementations MAY define additional
-            capabilities. Unknown capabilities MUST be ignored by backends.
+            List of device capabilities (hardware and software). Defined values:
+            audio_out, audio_in, display, haptic, camera. Implementations MAY
+            define additional capabilities. Unknown capabilities MUST be ignored
+            by backends. Platform-specific capabilities SHOULD use a namespace
+            prefix to avoid collisions (e.g., `openclaw:exec_approvals`).
           items:
             type: string
           example:
