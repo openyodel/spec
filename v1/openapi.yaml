@@ -444,8 +444,10 @@ components:
             List of device capabilities (hardware and software). Defined values:
             audio_out, audio_in, display, haptic, camera. Implementations MAY
             define additional capabilities. Unknown capabilities MUST be ignored
-            by backends. Platform-specific capabilities SHOULD use a namespace
-            prefix to avoid collisions (e.g., `openclaw:exec_approvals`).
+            by backends. Standard capabilities use plain identifiers (e.g.,
+            `skills`, `cron`, `workflows`). Platform-specific capabilities
+            SHOULD use a namespace prefix to avoid collisions (e.g.,
+            `openclaw:exec_approvals`, `ha:scenes`).
           items:
             type: string
           example:
