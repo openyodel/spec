@@ -50,8 +50,8 @@ decisions/
 
 ## Related
 
-- [openyodel/swift](https://github.com/openyodel/swift) — iOS SDK (Apple SpeechAnalyzer + WhisperKit)
-- [openyodel/js](https://github.com/openyodel/js) — Web/PWA SDK (Web Speech API + Whisper WASM)
+- [openyodel/yodel-swift](https://github.com/openyodel/yodel-swift) — iOS SDK (Apple SpeechAnalyzer + WhisperKit)
+- [openyodel/yodel-js](https://github.com/openyodel/yodel-js) — Web/PWA SDK (Web Speech API + Whisper WASM)
 
 ## License
 
