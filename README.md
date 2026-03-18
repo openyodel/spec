@@ -4,6 +4,8 @@ The **Yodel protocol** is the open communication protocol behind [Open Yodel](ht
 
 > *Yodel — calling across distance, catching the echo.*
 
+> **New here?** Start with the [Vision](VISION.md) to understand where Open Yodel is heading.
+
 ## Versions
 
 | Version | Status | Transport | Spec |
