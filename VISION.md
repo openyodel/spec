@@ -4,7 +4,9 @@
 
 *Vision & Invitation — Version 0.1, March 2026*
 
-Open Yodel is an open protocol that gives humans a universal way to talk to AI agents and smart devices — across any medium. HTTP, Bluetooth, LoRa, ultrasound, even the power grid. The protocol doesn't care how the signal travels. It defines what is called, not how the sound carries.
+Open Yodel defines how humans and machines find each other. 
+
+It is an open standard that gives humans a universal way to communicate with AI agents and smart devices — across any medium. HTTP, Bluetooth, LoRa, ultrasound, even the power grid. It defines what is said, not how the signal travels. Seven bytes are enough to discover. The full richness of conversations activates only when needed.
 
 The name says it all: a yodeler in the Alps doesn't control who hears the call or how it echoes through the valley. He just yodels. Whoever hears it, knows what it means.
 
