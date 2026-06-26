@@ -54,6 +54,9 @@ decisions/
 
 - [openyodel/yodel-swift](https://github.com/openyodel/yodel-swift) — iOS SDK (Apple SpeechAnalyzer + WhisperKit)
 - [openyodel/yodel-js](https://github.com/openyodel/yodel-js) — Web/PWA SDK (Web Speech API + Whisper WASM)
+- [openyodel/yodel-agent-claude](https://github.com/openyodel/yodel-agent-claude) — Claude agent server with native Yodel support
+- [openyodel/plugin-openyodel-hermes](https://github.com/openyodel/plugin-openyodel-hermes) — Reference adapter: connecting AI agent platforms to Yodel
+- [openyodel/yodel-acoustic-pairing](https://github.com/openyodel/yodel-acoustic-pairing) — Acoustic device pairing research & spec
 
 ## License
 

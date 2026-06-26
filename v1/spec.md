@@ -17,7 +17,12 @@ Giving the protocol its own name today makes the spec referenceable and reserves
 
 ### 1.1 Scope
 
-This specification covers **Yodel as Conversation** — the ongoing communication protocol between client and backend. **Yodel as Call** (the musical audio handshake for device-to-gateway pairing) is outside the scope of this protocol spec and defined separately.
+This specification covers **Yodel as Conversation** — the ongoing communication protocol between client and backend. **Yodel as Call** (the handshake by which a device pairs with an agent platform) is outside the scope of this protocol spec and defined separately.
+
+Two pairing methods are under active development:
+
+- **Code Pairing** — the baseline approach: a 6-digit code or URL entered manually by the user. Simple, reliable, no additional hardware required. This is the recommended first pairing method for any Yodel client.
+- **Acoustic Pairing** — zero-friction onboarding via audio: one device emits a coded sound sequence through its speaker; the other captures it via microphone and derives the connection parameters. No QR code, no URL, no Bluetooth setup. See [openyodel/yodel-acoustic-pairing](https://github.com/openyodel/yodel-acoustic-pairing) for the research spec.
 
 ### 1.2 Decision Records
 
@@ -47,6 +52,7 @@ The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT", and "MAY" in this docu
 | **Backend** | Any server that handles chat completion requests. May or may not be Yodel-aware. |
 | **Gateway** | An optional management layer between client and backend that handles device registration, agent configuration, and routing. Not required for Yodel communication. |
 | **Agent** | A named configuration consisting of an endpoint, model, system prompt, session mode, TTS settings, and language. Users interact with agents, not raw endpoints. |
+| **Adapter** | A plugin or bridge that connects a Yodel client to an existing agent platform without requiring the platform to natively implement the Yodel protocol. The adapter translates between Yodel and the platform's native interface. When identified as a client, an adapter sets `device.type: agent_platform`. See [openyodel/plugin-openyodel-hermes](https://github.com/openyodel/plugin-openyodel-hermes) for a reference implementation. |
 | **Session** | A logical conversation context. May be ephemeral (stateless) or persistent (client-managed history). |
 | **Yodel-aware** | A backend or gateway that understands and processes Yodel headers and the `yodel` extension block. |
 
